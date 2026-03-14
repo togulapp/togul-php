@@ -6,6 +6,8 @@ namespace Nori;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Exception\RequestException;
+use Psr\Http\Message\ResponseInterface;
 
 class NoriClient
 {
@@ -17,7 +19,7 @@ class NoriClient
     ) {
         $headers = ['Content-Type' => 'application/json'];
         if ($this->config->apiKey !== '') {
-            $headers['Authorization'] = 'Bearer ' . $this->config->apiKey;
+            $headers['X-API-Key'] = $this->config->apiKey;
         }
 
         $this->http = new Client([
@@ -73,6 +75,10 @@ class NoriClient
      */
     private function evaluate(string $key, array $context): bool
     {
+        if ($this->config->apiKey === '') {
+            throw new NoriException('API key is required');
+        }
+
         $lastException = null;
 
         for ($attempt = 0; $attempt < $this->config->retryCount; $attempt++) {
@@ -91,6 +97,13 @@ class NoriClient
 
                 $body = json_decode($response->getBody()->getContents(), true);
                 return (bool) ($body['value'] ?? false);
+            } catch (RequestException $e) {
+                $apiError = $this->toApiError($e->getResponse(), $e);
+                $lastException = $apiError;
+
+                if (!$this->shouldRetry($apiError->statusCode)) {
+                    throw $apiError;
+                }
             } catch (\Throwable $e) {
                 $lastException = $e;
             }
@@ -104,10 +117,44 @@ class NoriClient
 
     private function buildCacheKey(string $key, array $context): string
     {
-        $cacheKey = $key . ':' . $this->config->environment;
-        if (isset($context['user_id'])) {
-            $cacheKey .= ':' . $context['user_id'];
+        ksort($context);
+
+        $parts = [$key, $this->config->environment];
+        foreach ($context as $contextKey => $contextValue) {
+            $parts[] = $contextKey . '=' . $contextValue;
         }
-        return $cacheKey;
+
+        return implode(':', $parts);
+    }
+
+    private function shouldRetry(int $statusCode): bool
+    {
+        return $statusCode === 429 || $statusCode >= 500;
+    }
+
+    private function toApiError(?ResponseInterface $response, \Throwable $previous): NoriException
+    {
+        if ($response === null) {
+            return new NoriException(
+                'Request failed: ' . $previous->getMessage(),
+                previous: $previous,
+            );
+        }
+
+        $statusCode = $response->getStatusCode();
+        $body = json_decode((string) $response->getBody(), true);
+        $message = is_array($body) && isset($body['message'])
+            ? (string) $body['message']
+            : 'Unexpected status ' . $statusCode;
+        $errorCode = is_array($body) && isset($body['code'])
+            ? (string) $body['code']
+            : null;
+
+        return new NoriException(
+            $message,
+            statusCode: $statusCode,
+            errorCode: $errorCode,
+            previous: $previous,
+        );
     }
 }
