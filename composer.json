@@ -1,6 +1,6 @@
 {
-    "name": "nori/php-sdk",
-    "description": "PHP SDK for Nori Feature Flag Service",
+    "name": "togul/php-sdk",
+    "description": "PHP SDK for Togul Feature Flag Service",
     "type": "library",
     "license": "MIT",
     "require": {
@@ -9,7 +9,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Nori\\": "src/"
+            "Togul\\": "src/"
         }
     },
     "minimum-stability": "stable"

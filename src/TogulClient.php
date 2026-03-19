@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Nori;
+namespace Togul;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
 use Psr\Http\Message\ResponseInterface;
 
-class NoriClient
+class TogulClient
 {
     private Client $http;
     private Cache $cache;
@@ -38,7 +38,7 @@ class NoriClient
      * @param array<string, string> $context User/request context
      * @return bool Whether the flag is enabled for the given context
      *
-     * @throws NoriException When the API is unreachable and fallback mode is FailClosed
+     * @throws TogulException When the API is unreachable and fallback mode is FailClosed
      */
     public function isEnabled(string $key, array $context = []): bool
     {
@@ -71,12 +71,12 @@ class NoriClient
 
     /**
      * @throws GuzzleException
-     * @throws NoriException
+     * @throws TogulException
      */
     private function evaluate(string $key, array $context): bool
     {
         if ($this->config->apiKey === '') {
-            throw new NoriException('API key is required');
+            throw new TogulException('API key is required');
         }
 
         $lastException = null;
@@ -109,7 +109,7 @@ class NoriClient
             }
         }
 
-        throw new NoriException(
+        throw new TogulException(
             'All retries failed: ' . ($lastException?->getMessage() ?? 'unknown error'),
             previous: $lastException,
         );
@@ -132,10 +132,10 @@ class NoriClient
         return $statusCode === 429 || $statusCode >= 500;
     }
 
-    private function toApiError(?ResponseInterface $response, \Throwable $previous): NoriException
+    private function toApiError(?ResponseInterface $response, \Throwable $previous): TogulException
     {
         if ($response === null) {
-            return new NoriException(
+            return new TogulException(
                 'Request failed: ' . $previous->getMessage(),
                 previous: $previous,
             );
@@ -150,7 +150,7 @@ class NoriClient
             ? (string) $body['code']
             : null;
 
-        return new NoriException(
+        return new TogulException(
             $message,
             statusCode: $statusCode,
             errorCode: $errorCode,

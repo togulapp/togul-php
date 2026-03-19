@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Nori;
+namespace Togul;
 
-class NoriException extends \RuntimeException
+class TogulException extends \RuntimeException
 {
     public function __construct(
         string $message = "",

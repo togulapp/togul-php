@@ -1,11 +1,11 @@
-# Nori PHP SDK
+# Togul PHP SDK
 
-PHP client for evaluating Nori feature flags with local TTL caching and fallback behavior.
+PHP client for evaluating Togul feature flags with local TTL caching and fallback behavior.
 
 ## Install
 
 ```bash
-composer require nori/php-sdk
+composer require togul/php-sdk
 ```
 
 ## Usage
@@ -13,11 +13,11 @@ composer require nori/php-sdk
 ```php
 <?php
 
-use Nori\Config;
-use Nori\FallbackMode;
-use Nori\NoriClient;
+use Togul\Config;
+use Togul\FallbackMode;
+use Togul\TogulClient;
 
-$client = new NoriClient(new Config(
+$client = new TogulClient(new Config(
     baseUrl: 'http://localhost:8080',
     environment: 'production',
     apiKey: 'your-environment-api-key',
