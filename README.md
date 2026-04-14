@@ -18,7 +18,6 @@ use Togul\FallbackMode;
 use Togul\TogulClient;
 
 $client = new TogulClient(new Config(
-    baseUrl: 'http://localhost:8080',
     environment: 'production',
     apiKey: 'your-environment-api-key',
     timeout: 5.0,
