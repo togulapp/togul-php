@@ -13,6 +13,7 @@ class TogulClient
 {
     private Client $http;
     private Cache $cache;
+    private ?TogulStreamClient $streamClient = null;
 
     public function __construct(
         private readonly Config $config,
@@ -67,6 +68,36 @@ class TogulClient
     public function invalidateCache(): void
     {
         $this->cache->flush();
+    }
+
+    /**
+     * Clear a specific flag from cache.
+     */
+    public function invalidateFlag(string $key): void
+    {
+        $this->cache->invalidateFlag($key);
+    }
+
+    /**
+     * Start SSE stream for real-time cache invalidation.
+     */
+    public function stream(): TogulStreamClient
+    {
+        if ($this->streamClient === null) {
+            $this->streamClient = new TogulStreamClient($this->config, $this->cache);
+        }
+        return $this->streamClient;
+    }
+
+    /**
+     * Register a listener for cache invalidation events.
+     */
+    public function onCacheInvalidated(callable $listener): void
+    {
+        if ($this->streamClient === null) {
+            $this->streamClient = new TogulStreamClient($this->config, $this->cache);
+        }
+        $this->streamClient->onCacheInvalidated($listener);
     }
 
     /**

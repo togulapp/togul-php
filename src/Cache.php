@@ -40,4 +40,14 @@ class Cache
     {
         $this->store = [];
     }
+
+    public function invalidateFlag(string $flagKey): void
+    {
+        $prefix = $flagKey . ':';
+        foreach (array_keys($this->store) as $key) {
+            if (str_starts_with($key, $prefix)) {
+                unset($this->store[$key]);
+            }
+        }
+    }
 }
