@@ -24,7 +24,7 @@ class TogulClient
         }
 
         $this->http = new Client([
-            'base_uri' => rtrim($this->config->baseUrl, '/'),
+            'base_uri' => rtrim($this->config->getBaseUrl(), '/'),
             'timeout' => $this->config->timeout,
             'headers' => $headers,
         ]);

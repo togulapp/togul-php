@@ -23,7 +23,7 @@ class TogulStreamClient
         }
 
         $this->http = new Client([
-            'base_uri' => rtrim($this->config->baseUrl, '/'),
+            'base_uri' => rtrim($this->config->getBaseUrl(), '/'),
             'timeout' => 0,
             'headers' => $headers,
         ]);
