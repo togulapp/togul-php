@@ -6,14 +6,14 @@ namespace Togul;
 
 class Cache
 {
-    /** @var array<string, array{value: bool, expires_at: float}> */
+    /** @var array<string, array{result: EvaluateResult, expires_at: float}> */
     private array $store = [];
 
     public function __construct(
         private readonly int $ttl,
     ) {}
 
-    public function get(string $key): ?bool
+    public function get(string $key): ?EvaluateResult
     {
         if (!isset($this->store[$key])) {
             return null;
@@ -25,13 +25,19 @@ class Cache
             return null;
         }
 
-        return $entry['value'];
+        // Treat entries with missing value_type as stale (legacy/invalid format).
+        if ($entry['result']->valueType === '') {
+            unset($this->store[$key]);
+            return null;
+        }
+
+        return $entry['result'];
     }
 
-    public function set(string $key, bool $value): void
+    public function set(string $key, EvaluateResult $result): void
     {
         $this->store[$key] = [
-            'value' => $value,
+            'result'     => $result,
             'expires_at' => microtime(true) + $this->ttl,
         ];
     }

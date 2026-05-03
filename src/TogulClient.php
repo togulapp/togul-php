@@ -38,10 +38,26 @@ class TogulClient
      * @param string $key Flag key
      * @param array<string, string> $context User/request context
      * @return bool Whether the flag is enabled for the given context
-     *
-     * @throws TogulException When the API is unreachable and fallback mode is FailClosed
      */
     public function isEnabled(string $key, array $context = []): bool
+    {
+        try {
+            return $this->evaluateResult($key, $context)->enabled;
+        } catch (\Throwable) {
+            return match ($this->config->fallbackMode) {
+                FallbackMode::FailOpen => true,
+                FallbackMode::FailClosed => false,
+            };
+        }
+    }
+
+    /**
+     * Evaluate a feature flag and return the full result with typed value accessors.
+     *
+     * @param string $key Flag key
+     * @param array<string, string> $context User/request context
+     */
+    public function evaluateResult(string $key, array $context = []): EvaluateResult
     {
         $cacheKey = $this->buildCacheKey($key, $context);
 
@@ -50,15 +66,72 @@ class TogulClient
             return $cached;
         }
 
+        $result = $this->evaluate($key, $context);
+        $this->cache->set($cacheKey, $result);
+        return $result;
+    }
+
+    /**
+     * Evaluate a boolean flag.
+     *
+     * @param string $key Flag key
+     * @param array<string, string> $context User/request context
+     * @param bool $fallback Value to return on error or type mismatch
+     */
+    public function evaluateBool(string $key, array $context = [], bool $fallback = false): bool
+    {
         try {
-            $value = $this->evaluate($key, $context);
-            $this->cache->set($cacheKey, $value);
-            return $value;
-        } catch (\Throwable $e) {
-            return match ($this->config->fallbackMode) {
-                FallbackMode::FailOpen => true,
-                FallbackMode::FailClosed => false,
-            };
+            return $this->evaluateResult($key, $context)->boolValue($fallback);
+        } catch (\Throwable) {
+            return $fallback;
+        }
+    }
+
+    /**
+     * Evaluate a string flag.
+     *
+     * @param string $key Flag key
+     * @param array<string, string> $context User/request context
+     * @param string $fallback Value to return on error or type mismatch
+     */
+    public function evaluateString(string $key, array $context = [], string $fallback = ''): string
+    {
+        try {
+            return $this->evaluateResult($key, $context)->stringValue($fallback);
+        } catch (\Throwable) {
+            return $fallback;
+        }
+    }
+
+    /**
+     * Evaluate a number flag.
+     *
+     * @param string $key Flag key
+     * @param array<string, string> $context User/request context
+     * @param float $fallback Value to return on error or type mismatch
+     */
+    public function evaluateNumber(string $key, array $context = [], float $fallback = 0.0): float
+    {
+        try {
+            return $this->evaluateResult($key, $context)->numberValue($fallback);
+        } catch (\Throwable) {
+            return $fallback;
+        }
+    }
+
+    /**
+     * Evaluate a JSON flag.
+     *
+     * @param string $key Flag key
+     * @param array<string, string> $context User/request context
+     * @param mixed $fallback Value to return on error or type mismatch
+     */
+    public function evaluateJSON(string $key, array $context = [], mixed $fallback = null): mixed
+    {
+        try {
+            return $this->evaluateResult($key, $context)->jsonValue($fallback);
+        } catch (\Throwable) {
+            return $fallback;
         }
     }
 
@@ -104,7 +177,7 @@ class TogulClient
      * @throws GuzzleException
      * @throws TogulException
      */
-    private function evaluate(string $key, array $context): bool
+    private function evaluate(string $key, array $context): EvaluateResult
     {
         if ($this->config->apiKey === '') {
             throw new TogulException('API key is required');
@@ -127,7 +200,14 @@ class TogulClient
                 ]);
 
                 $body = json_decode($response->getBody()->getContents(), true);
-                return (bool) ($body['value'] ?? false);
+
+                return new EvaluateResult(
+                    flagKey:   (string) ($body['flag_key'] ?? $key),
+                    enabled:   (bool) ($body['enabled'] ?? false),
+                    valueType: (string) ($body['value_type'] ?? ''),
+                    rawValue:  $body['value'] ?? null,
+                    reason:    (string) ($body['reason'] ?? ''),
+                );
             } catch (RequestException $e) {
                 $apiError = $this->toApiError($e->getResponse(), $e);
                 $lastException = $apiError;
