@@ -12,5 +12,6 @@
             "Togul\\": "src/"
         }
     },
-    "minimum-stability": "stable"
+    "minimum-stability": "stable",
+    "version": "2.4.0"
 }
