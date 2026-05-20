@@ -13,7 +13,6 @@ class Config
         public readonly string $apiKey = '',
         public readonly float $timeout = 5.0,
         public readonly int $cacheTtl = 30,
-        public readonly FallbackMode $fallbackMode = FallbackMode::FailClosed,
         public readonly int $retryCount = 2,
         private readonly string $baseUrl = self::DEFAULT_BASE_URL,
     ) {}
