@@ -14,7 +14,6 @@ composer require togul/php-sdk
 <?php
 
 use Togul\Config;
-use Togul\FallbackMode;
 use Togul\TogulClient;
 
 $client = new TogulClient(new Config(
@@ -22,7 +21,6 @@ $client = new TogulClient(new Config(
     apiKey: 'your-environment-api-key',
     timeout: 5.0,
     cacheTtl: 30,
-    fallbackMode: FallbackMode::FailClosed,
     retryCount: 2,
 ));
 

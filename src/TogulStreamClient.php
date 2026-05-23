@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Togul;
 
 use GuzzleHttp\Client;
-use GuzzleHttp\Exception\GuzzleException;
 
 class TogulStreamClient
 {
@@ -113,7 +112,7 @@ class TogulStreamClient
 
     private function isAuthError(\Throwable $e): bool
     {
-        if ($e instanceof GuzzleException) {
+        if ($e instanceof \GuzzleHttp\Exception\RequestException) {
             $response = $e->getResponse();
             if ($response !== null) {
                 $status = $response->getStatusCode();
