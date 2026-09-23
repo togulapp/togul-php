@@ -44,3 +44,6 @@ jobs:
 
       - name: Verify SDK covers evaluate endpoint
         run: grep -q "evaluate" src/TogulClient.php && echo "SDK covers evaluate endpoint"
+
+      - name: Run tests
+        run: composer test
